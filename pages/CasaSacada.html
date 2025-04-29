@@ -69,8 +69,8 @@
 
   <canvas id="drawing-canvas" width="800" height="600"></canvas>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
+ <script>
+    document.addEventListener('DOMContentLoaded', async () => {
       const canvas = new fabric.Canvas('drawing-canvas', {
         backgroundColor: 'white',
         isDrawingMode: true
@@ -79,7 +79,8 @@
       let brushColor = '#6F4E37';
       let brushSize = 5;
       let brushTransparency = 1;
-      let imageTransparency = 0.05; // Invertido para começar quase invisível
+      let imageTransparency = 0.05;
+      let drawingObject = null; // Pode ser SVG ou Image
 
       const transparencySlider = document.getElementById('transparency-slider');
       const transparencyValue = document.getElementById('transparency-value');
@@ -88,30 +89,65 @@
       updateBrushColor();
       canvas.freeDrawingBrush.width = brushSize;
 
-      const drawingName = 'teste1'; // SVG padrão
-      const drawingPath = `assets/drawings/${drawingName}.svg`;
-
-      let svgObject;
-
-      fabric.loadSVGFromURL(drawingPath, (objects, options) => {
-        if (!objects || objects.length === 0) {
-          console.error('SVG não carregado ou vazio');
-          alert('Desenho não encontrado. Por favor, verifique o arquivo SVG.');
-          return;
+      // Tenta carregar primeiro o SVG, se falhar carrega a imagem PNG
+      async function loadDrawing() {
+        const svgPath = 'assets/drawings/teste1.svg';
+        const pngPath = 'assets/drawings/casa_sacada.png';
+        
+        try {
+          // Primeiro tenta carregar o SVG
+          const svgLoaded = await new Promise((resolve) => {
+            fabric.loadSVGFromURL(svgPath, (objects, options) => {
+              if (!objects || objects.length === 0) {
+                resolve(false);
+                return;
+              }
+              
+              drawingObject = fabric.util.groupSVGElements(objects, {
+                stroke: 'black',
+                strokeWidth: 1,
+                selectable: false,
+                evented: false,
+                opacity: imageTransparency
+              });
+              
+              canvas.add(drawingObject);
+              canvas.centerObject(drawingObject);
+              canvas.renderAll();
+              resolve(true);
+            }, null, () => resolve(false));
+          });
+          
+          // Se o SVG não carregar, tenta a imagem PNG
+          if (!svgLoaded) {
+            console.log('SVG não encontrado, tentando carregar PNG...');
+            drawingObject = await new Promise((resolve) => {
+              fabric.Image.fromURL(pngPath, function(img) {
+                img.set({
+                  selectable: false,
+                  evented: false,
+                  opacity: imageTransparency,
+                  originX: 'center',
+                  originY: 'center'
+                });
+                
+                canvas.add(img);
+                img.center();
+                canvas.renderAll();
+                resolve(img);
+              }, {
+                crossOrigin: 'anonymous'
+              });
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao carregar desenho:', error);
+          alert('Não foi possível carregar o desenho. Verifique o console para mais detalhes.');
         }
+      }
 
-        svgObject = fabric.util.groupSVGElements(objects, {
-          stroke: 'black',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          opacity: imageTransparency
-        });
-
-        canvas.add(svgObject);
-        canvas.centerObject(svgObject);
-        canvas.renderAll();
-      });
+      // Carrega o desenho
+      await loadDrawing();
 
       transparencySlider.addEventListener('input', (e) => {
         const sliderValue = parseInt(e.target.value);
@@ -120,11 +156,10 @@
         brushTransparency = sliderValue / 100;
         updateBrushColor();
 
-        // Ajuste mais intuitivo: 0% = imagem totalmente visível, 100% = imagem totalmente transparente
         imageTransparency = (100 - sliderValue) / 100;
 
-        if (svgObject) {
-          svgObject.set('opacity', imageTransparency);
+        if (drawingObject) {
+          drawingObject.set('opacity', imageTransparency);
           canvas.renderAll();
         }
       });
@@ -156,7 +191,7 @@
           format: 'png',
           quality: 1
         });
-        link.download = `${drawingName}_colorido_${new Date().getTime()}.png`;
+        link.download = `casa_sacada_colorido_${new Date().getTime()}.png`;
         link.click();
       });
 
@@ -171,6 +206,6 @@
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
       }
     });
-  </script>
+</script>
 </body>
 </html>
