@@ -7,9 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let brushColor = '#6F4E37';
     let brushSize = 5;
     let brushTransparency = 1; // 1 = opaco, 0 = transparente
-    let imageTransparency = 0.95; // 0 = opaco, 1 = transparente (inverso do slider) - INICIALIZADO COM 95% DE TRANSPARÊNCIA
+    let imageTransparency = 0.95;
 
-    // Obter elementos da UI
     const transparencySlider = document.getElementById('transparency-slider');
     const transparencyValue = document.getElementById('transparency-value');
 
@@ -18,13 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     updateBrushColor();
     canvas.freeDrawingBrush.width = brushSize;
 
-    // Carregar o SVG
+    // Obter o nome do desenho a partir da URL
     const urlParams = new URLSearchParams(window.location.search);
-    const drawingName = urlParams.get('drawing') || 'casa_sacada';
-    const drawingPath = `./assets/drawings/${drawingName}.svg`;
+    const drawingName = urlParams.get('drawing') || 'teste1'; // padrão: teste1
+    const drawingPath = `../assets/drawings/${drawingName}.svg`;
 
-    let svgObject; // Variável para armazenar o objeto SVG
+    let svgObject;
 
+    // Carregar SVG como grupo
     fabric.loadSVGFromURL(drawingPath, (objects, options) => {
         if (!objects || objects.length === 0) throw new Error('SVG vazio ou inválido');
 
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
             strokeWidth: 1,
             selectable: false,
             evented: false,
-            opacity: imageTransparency // INICIALIZADO COM A TRANSPARÊNCIA DESEJADA PARA MARCA D'ÁGUA
+            opacity: imageTransparency
         });
 
         canvas.add(svgObject);
@@ -41,19 +41,18 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.renderAll();
     });
 
-    // Controle de transparência PRINCIPAL (100 a 0)
+    // Controle de transparência
     transparencySlider.addEventListener('input', (e) => {
         const sliderValue = parseInt(e.target.value);
         transparencyValue.textContent = `${sliderValue}%`;
 
-        // Converter slider (100-0) para opacidade do PINCEL (0-1)
+        // Pincel (0-1)
         brushTransparency = sliderValue / 100;
         updateBrushColor();
 
-        // Calcular a transparência da IMAGEM (0 a 95)
-        imageTransparency = 1 - (sliderValue / 100 * 0.95); // Mapeia 0-100 para 0.05-1 (opacidade)
+        // Imagem (transparente → opaco)
+        imageTransparency = 1 - (sliderValue / 100 * 0.95);
 
-        // Aplicar na imagem
         if (svgObject) {
             svgObject.set('opacity', imageTransparency);
             canvas.renderAll();
@@ -68,10 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('eraser').addEventListener('click', () => {
         canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.color = 'rgba(255, 255, 255, 1)'; // Apagador sempre opaco
+        canvas.freeDrawingBrush.color = 'rgba(255, 255, 255, 1)';
     });
 
-    // Cor do pincel
+    // Cor
     document.getElementById('color-picker').addEventListener('input', (e) => {
         brushColor = e.target.value;
         updateBrushColor();
@@ -84,12 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('brush-size-value').textContent = brushSize;
     });
 
-    // Função para atualizar a cor do pincel com transparência
+    // Função de cor com alfa
     function updateBrushColor() {
         canvas.freeDrawingBrush.color = hexToRgba(brushColor, brushTransparency);
     }
 
-    // Baixar imagem (incluindo transparência)
+    // Baixar como PNG
     document.getElementById('download').addEventListener('click', () => {
         const link = document.createElement('a');
         link.href = canvas.toDataURL({
@@ -100,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
         link.click();
     });
 
-    // Função auxiliar para converter HEX para RGBA
     function hexToRgba(hex, alpha = 1) {
         const r = parseInt(hex.slice(1, 3), 16);
         const g = parseInt(hex.slice(3, 5), 16);
