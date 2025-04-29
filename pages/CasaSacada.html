@@ -70,85 +70,62 @@
   <canvas id="drawing-canvas" width="800" height="600"></canvas>
 
  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Inicializa o canvas
       const canvas = new fabric.Canvas('drawing-canvas', {
         backgroundColor: 'white',
         isDrawingMode: true
       });
 
+      // Configurações iniciais
       let brushColor = '#6F4E37';
       let brushSize = 5;
       let brushTransparency = 1;
       let imageTransparency = 0.05;
-      let drawingObject = null; // Pode ser SVG ou Image
+      let drawingImage = null;
 
+      // Elementos da UI
       const transparencySlider = document.getElementById('transparency-slider');
       const transparencyValue = document.getElementById('transparency-value');
+      const errorMessage = document.createElement('div');
+      errorMessage.className = 'error-message';
+      document.body.appendChild(errorMessage);
 
+      // Configura o pincel inicial
       canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
       updateBrushColor();
       canvas.freeDrawingBrush.width = brushSize;
 
-      // Tenta carregar primeiro o SVG, se falhar carrega a imagem PNG
-      async function loadDrawing() {
-        const svgPath = 'assets/drawings/teste1.svg';
-        const pngPath = 'assets/drawings/casa_sacada.png';
+      // Carrega a imagem PNG
+      function loadImage() {
+        const imgPath = 'assets/drawings/casa_sacada.png';
         
-        try {
-          // Primeiro tenta carregar o SVG
-          const svgLoaded = await new Promise((resolve) => {
-            fabric.loadSVGFromURL(svgPath, (objects, options) => {
-              if (!objects || objects.length === 0) {
-                resolve(false);
-                return;
-              }
-              
-              drawingObject = fabric.util.groupSVGElements(objects, {
-                stroke: 'black',
-                strokeWidth: 1,
-                selectable: false,
-                evented: false,
-                opacity: imageTransparency
-              });
-              
-              canvas.add(drawingObject);
-              canvas.centerObject(drawingObject);
-              canvas.renderAll();
-              resolve(true);
-            }, null, () => resolve(false));
+        fabric.Image.fromURL(imgPath, function(img) {
+          img.set({
+            selectable: false,
+            evented: false,
+            opacity: imageTransparency,
+            originX: 'center',
+            originY: 'center',
+            left: canvas.width / 2,
+            top: canvas.height / 2
           });
           
-          // Se o SVG não carregar, tenta a imagem PNG
-          if (!svgLoaded) {
-            console.log('SVG não encontrado, tentando carregar PNG...');
-            drawingObject = await new Promise((resolve) => {
-              fabric.Image.fromURL(pngPath, function(img) {
-                img.set({
-                  selectable: false,
-                  evented: false,
-                  opacity: imageTransparency,
-                  originX: 'center',
-                  originY: 'center'
-                });
-                
-                canvas.add(img);
-                img.center();
-                canvas.renderAll();
-                resolve(img);
-              }, {
-                crossOrigin: 'anonymous'
-              });
-            });
-          }
-        } catch (error) {
-          console.error('Erro ao carregar desenho:', error);
-          alert('Não foi possível carregar o desenho. Verifique o console para mais detalhes.');
-        }
+          canvas.add(img);
+          canvas.renderAll();
+          drawingImage = img;
+          errorMessage.style.display = 'none';
+        }, {
+          crossOrigin: 'anonymous'
+        }, function(err) {
+          console.error('Erro ao carregar imagem:', err);
+          errorMessage.textContent = `Erro: Não foi possível carregar a imagem (${imgPath}). Verifique se o arquivo existe.`;
+          errorMessage.style.display = 'block';
+        });
       }
 
-      // Carrega o desenho
-      await loadDrawing();
-
+      // Controle de transparência
       transparencySlider.addEventListener('input', (e) => {
         const sliderValue = parseInt(e.target.value);
         transparencyValue.textContent = `${sliderValue}%`;
@@ -158,12 +135,13 @@
 
         imageTransparency = (100 - sliderValue) / 100;
 
-        if (drawingObject) {
-          drawingObject.set('opacity', imageTransparency);
+        if (drawingImage) {
+          drawingImage.set('opacity', imageTransparency);
           canvas.renderAll();
         }
       });
 
+      // Ferramentas
       document.getElementById('brush').addEventListener('click', () => {
         canvas.isDrawingMode = true;
         updateBrushColor();
@@ -185,16 +163,23 @@
         document.getElementById('brush-size-value').textContent = brushSize;
       });
 
+      // Download
       document.getElementById('download').addEventListener('click', () => {
+        if (!drawingImage) {
+          alert('Ainda carregando a imagem...');
+          return;
+        }
+        
         const link = document.createElement('a');
         link.href = canvas.toDataURL({
           format: 'png',
           quality: 1
         });
-        link.download = `casa_sacada_colorido_${new Date().getTime()}.png`;
+        link.download = `casa_sacada_${new Date().getTime()}.png`;
         link.click();
       });
 
+      // Funções auxiliares
       function updateBrushColor() {
         canvas.freeDrawingBrush.color = hexToRgba(brushColor, brushTransparency);
       }
@@ -205,6 +190,9 @@
         const b = parseInt(hex.slice(5, 7), 16);
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
       }
+
+      // Inicia o carregamento
+      loadImage();
     });
 </script>
 </body>
