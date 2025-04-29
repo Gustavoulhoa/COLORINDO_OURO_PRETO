@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Casa Sacada - Pintura</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input[type="range"] {
+      width: 100px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Colorir Casa com Sacada</h1>
+
+  <div class="controls">
+    <div class="control-group">
+      <button id="brush">Pincel</button>
+      <button id="eraser">Borracha</button>
+    </div>
+
+    <div class="control-group">
+      <label for="color-picker">Cor:</label>
+      <input type="color" id="color-picker" value="#6F4E37" />
+    </div>
+
+    <div class="control-group">
+      <label for="brush-size">Tamanho:</label>
+      <input type="range" id="brush-size" min="1" max="50" value="5" />
+      <span id="brush-size-value">5</span>
+    </div>
+
+    <div class="control-group">
+      <label for="transparency-slider">Transparência:</label>
+      <input type="range" id="transparency-slider" min="0" max="100" value="100" />
+      <span id="transparency-value">100%</span>
+    </div>
+
+    <div class="control-group">
+      <button id="download">Baixar imagem</button>
+    </div>
+  </div>
+
+  <canvas id="drawing-canvas" width="800" height="600"></canvas>
+
+  <!-- Biblioteca Fabric.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+
+  <!-- Script principal -->
+  <script src="./js/paint.js"></script>
+</body>
+</html>
