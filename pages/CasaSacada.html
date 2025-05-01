@@ -263,24 +263,23 @@
           crossOrigin: 'anonymous'
         });
       }
+function scaleAndCenterObject(obj) {
+  const bounds = obj.getBoundingRect(true);
+  const scale = Math.min(
+    canvas.width / bounds.width,
+    canvas.height / bounds.height
+  ) * 0.9;
 
-      function scaleAndCenterObject(obj) {
-        const scale = Math.min(
-          canvas.width / obj.width,
-          canvas.height / obj.height
-        ) * 0.9; // 90% do tamanho máximo
-        
-        obj.scale(scale);
-        obj.set({
-          left: canvas.width / 2,
-          top: canvas.height / 2,
-          originX: 'center',
-          originY: 'center',
-          selectable: false,
-          evented: false
-        });
-      }
-
+  obj.scale(scale);
+  canvas.centerObject(obj);
+  obj.set({
+    originX: 'center',
+    originY: 'center',
+    selectable: false,
+    evented: false
+  });
+  obj.setCoords(); // atualiza coordenadas
+}
       loadDrawing();
 
       // Controles da interface
